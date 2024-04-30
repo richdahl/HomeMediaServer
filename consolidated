@@ -54,15 +54,15 @@ services:
         image: eclipse-mosquitto:latest
         user: '99'
         environment:
-            - TZ=America/Chicago
+            - TZ=America/New_York
         healthcheck:
             test: "mosquitto_sub -E -t '#'"
             interval: 60s
             timeout: 10s
             retries: 5
         volumes:
-            - '/opt/mosquitto/config:/mosquitto/config:ro'
-            - '/opt/mosquitto/log:/mosquitto/log'
+            - '/home/richard/Docker/mosquitto/config:/mosquitto/config:ro'
+            - '/home/richard/Docker/mosquitto/log:/mosquitto/log'
             - '/opt/mosquitto/data:/mosquitto/data'
         ports:
             - '1883:1883'
@@ -75,23 +75,23 @@ services:
         image: influxdb:1.8.4-alpine
         user: '99'
         volumes:
-            - '/opt/influxdb:/var/lib/influxdb'
-            - '/opt/influxdb/conf:/etc/influxdb'
+            - '/home/richard/Docker/influxdb:/var/lib/influxdb'
+            - '/home/richard/Docker/influxdb/conf:/etc/influxdb'
         ports:
             - '127.0.0.1:8086:8086' # Expose localhost only for Home Assistant
         restart: always
         environment:
-            - TZ=America/Chicago
+            - TZ=America/New_York
 
     nodered:
         container_name: nodered
         image: nodered/node-red:latest
         user: '99'
         volumes:
-            - /opt/nodered:/data
+            - /home/richard/Docker/nodered:/data
             - /etc/localtime:/etc/localtime:ro
         environment:
-            - TZ=America/Chicago
+            - TZ=America/New_Yprk
         ports:
             - '25:25'
         restart: always
@@ -110,6 +110,134 @@ services:
             - traefik.http.routers.nodered_local.rule=Host(`nodered.home.domain.com`)
             - traefik.http.routers.nodered_local.service=nodered
 
+    grafana:
+        container_name: grafana
+        #image: grafana/grafana:6.4.5
+        image: grafana/grafana
+        #user: '99'
+        volumes:
+            - /opt/grafana:/var/lib/grafana
+        #ports:
+        #    - '3000:3000'
+        environment:
+            - GF_SECURITY_ALLOW_EMBEDDING=true
+            #- GF_SECURITY_COOKIE_SAMESITE=none
+            - GF_INSTALL_PLUGINS=neocat-cal-heatmap-panel
+        restart: "no"
+        labels:
+            # HTTPS for CF
+            - traefik.enable=true
+            - traefik.http.routers.grafana.entrypoints=websecure
+            - traefik.http.routers.grafana.tls=true
+            - traefik.http.routers.grafana.rule=Host(`grafana.domain.com`)
+            - traefik.http.services.grafana.loadbalancer.server.port=3000
+            - traefik.http.routers.grafana.service=grafana
+    vscode:
+        container_name: vscode
+        image: ghcr.io/hassio-addons/vscode/amd64:stable
+        restart: always
+        volumes:
+            - '/opt/vscode/data:/data/vscode'
+            - '/opt/homeassistant/:/config/homeassistant'
+            - '/opt/appdaemon/:/config/appdaemon'
+            - '/opt/docker-compose/:/config/docker-compose'
+            - '/opt/github:/config/github_projects'
+            - '/opt/frigate:/config/frigate'
+            - '/home/aneisch/.backup:/config/homeassistant-git'
+            - '/opt/terraform:/config/terraform'
+            - '/opt/traefik:/config/traefik'
+            - '/opt/vscode/run:/etc/s6-overlay/s6-rc.d/init-user/run'
+        environment:
+            - TZ=America/Chicago
+        labels:
+            #- sablier.enable=true
+            #- sablier.group=default
+            # HTTPS for CF
+            - traefik.enable=true
+            - traefik.http.routers.vscode.entrypoints=websecure
+            - traefik.http.routers.vscode.tls=true
+            - traefik.http.routers.vscode.rule=Host(`vscode.domain.com`)
+            - traefik.http.services.vscode.loadbalancer.server.port=1337
+            # HTTPS Local Only (with 80-->443 redirect)
+            - traefik.http.routers.vscode_local.tls=true
+            - traefik.http.routers.vscode_local.tls.certResolver=le-home
+            - traefik.http.routers.vscode_local.tls.domains[0].main=*.home.domain.com
+            - traefik.http.routers.vscode_local.rule=Host(`vscode.home.domain.com`)
+            - traefik.http.routers.vscode_local.service=vscode
+
+    traefik:
+        container_name: traefik
+        image: traefik:v3.0
+        restart: always
+        volumes:
+            - /home/richard/Docker/traefik/var/run/docker.sock:/var/run/docker.sock
+            - /home/richard/Docker/traefik/:/etc/traefik/
+            - /home/richard/Docker/traefik/certs:/opt/certs:ro
+        ports:
+            #- 8889:8080 # dashboard
+            - 80:80/tcp
+            - 443:443/udp
+            - 443:443/tcp
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        labels:
+            # HTTPS for CF
+            - traefik.enable=true
+            - traefik.http.routers.traefik_https.rule=Host(`traefik.domain.com`)
+            - traefik.http.routers.traefik_https.entrypoints=websecure
+            - traefik.http.routers.traefik_https.tls=true
+            - traefik.http.routers.traefik_https.service=api@internal
+            # HTTPS Local Only (with 80-->443 redirect)
+            - traefik.http.routers.traefik_local.tls=true
+            - traefik.http.routers.traefik_local.tls.certResolver=le-home
+            - traefik.http.routers.traefik_local.tls.domains[0].main=*.home.domain.com
+            - traefik.http.routers.traefik_local.rule=Host(`traefik.home.domain.com`)
+            - traefik.http.routers.traefik_local.service=api@internal
+        environment:
+            - CF_DNS_API_TOKEN=SECRET
+
+    cloudflared:
+        container_name: cloudflared
+        image: cloudflare/cloudflared:latest
+        restart: 'always'
+        network_mode: host
+        environment:
+            - TZ=America/Chicago
+        volumes:
+            - /home/richard/Docker/cloudflared/:/home/nonroot/.cloudflared/
+        command: tunnel run nuc
+    
+tailscale:
+        container_name: tailscale
+        volumes:
+            - '/var/lib:/var/lib'
+            - '/dev/net/tun:/dev/net/tun'
+        environment:
+            - TS_ROUTES=10.0.0.0/24,10.0.1.0/24
+        network_mode: host
+        privileged: true
+        image: tailscale/tailscale
+        entrypoint: tailscaled
+
+    nginx:
+        #image: nginx:latest
+        image: trafex/php-nginx
+        container_name: nginx
+        restart: 'always'
+        volumes:
+            #- /home/richard/Docker/nginx:/usr/share/nginx/html:ro
+            - /home/richard/Docker/nginx:/var/www/html:ro #php version
+        labels:
+            # HTTPS for CF
+            - traefik.enable=true
+            - traefik.http.routers.nginx.entrypoints=websecure
+            - traefik.http.routers.nginx.tls=true
+            - traefik.http.routers.nginx.rule=Host(`heatmap.domain.com`)
+            - traefik.http.services.nginx.loadbalancer.server.port=8080
+            - traefik.http.routers.nginx.service=nginx
+
+
+##
     appdaemon:
         container_name: appdaemon
         image: acockburn/appdaemon:dev
@@ -189,24 +317,6 @@ services:
             - traefik.http.routers.zwavejs_local.rule=Host(`zwavejs.home.domain.com`)
             - traefik.http.routers.zwavejs_local.service=zwavejs
 
-    cellular_message_relay_sim7080g:
-        container_name: cellular_message_relay_sim7080g
-        restart: always
-        image: ghcr.io/aneisch/cellular_message_relay:sim7080g
-        #image: cellular_message_relay:sim7080g
-        ports:
-            - '127.0.0.1:9998:9999' # Expose localhost only for Home Assistant
-        environment:
-            - SIM_KEY=SIM_KEY
-            - HOST=HOSTIP
-            - PORT=11111
-            - POWER_TOGGLE_WEBHOOK=http://10.0.1.22:8123/api/webhook/xxx
-            - TZ=America/Chicago
-        volumes:
-            - /etc/localtime:/etc/localtime:ro
-        devices:
-            - /dev/usb_modem_sim7080g:/dev/cellular_modem
-
     plex:
         container_name: plex
         image: plexinc/pms-docker:latest
@@ -266,29 +376,6 @@ services:
             # - traefik.http.routers.portainer_local.tls.domains[0].main=*.home.domain.com
             # - traefik.http.routers.portainer_local.rule=Host(`portainer.home.domain.com`)
             # - traefik.http.routers.portainer_local.service=portainer
-
-    grafana:
-        container_name: grafana
-        #image: grafana/grafana:6.4.5
-        image: grafana/grafana
-        #user: '99'
-        volumes:
-            - /opt/grafana:/var/lib/grafana
-        #ports:
-        #    - '3000:3000'
-        environment:
-            - GF_SECURITY_ALLOW_EMBEDDING=true
-            #- GF_SECURITY_COOKIE_SAMESITE=none
-            - GF_INSTALL_PLUGINS=neocat-cal-heatmap-panel
-        restart: "no"
-        labels:
-            # HTTPS for CF
-            - traefik.enable=true
-            - traefik.http.routers.grafana.entrypoints=websecure
-            - traefik.http.routers.grafana.tls=true
-            - traefik.http.routers.grafana.rule=Host(`grafana.domain.com`)
-            - traefik.http.services.grafana.loadbalancer.server.port=3000
-            - traefik.http.routers.grafana.service=grafana
 
     esphome:
         container_name: esphome
@@ -395,38 +482,6 @@ services:
             - /opt/bw-data:/bitwarden/data/
             - /opt/vaultwarden-backup/:/config/
 
-    vscode:
-        container_name: vscode
-        image: ghcr.io/hassio-addons/vscode/amd64:stable
-        restart: always
-        volumes:
-            - '/opt/vscode/data:/data/vscode'
-            - '/opt/homeassistant/:/config/homeassistant'
-            - '/opt/appdaemon/:/config/appdaemon'
-            - '/opt/docker-compose/:/config/docker-compose'
-            - '/opt/github:/config/github_projects'
-            - '/opt/frigate:/config/frigate'
-            - '/home/aneisch/.backup:/config/homeassistant-git'
-            - '/opt/terraform:/config/terraform'
-            - '/opt/traefik:/config/traefik'
-            - '/opt/vscode/run:/etc/s6-overlay/s6-rc.d/init-user/run'
-        environment:
-            - TZ=America/Chicago
-        labels:
-            #- sablier.enable=true
-            #- sablier.group=default
-            # HTTPS for CF
-            - traefik.enable=true
-            - traefik.http.routers.vscode.entrypoints=websecure
-            - traefik.http.routers.vscode.tls=true
-            - traefik.http.routers.vscode.rule=Host(`vscode.domain.com`)
-            - traefik.http.services.vscode.loadbalancer.server.port=1337
-            # HTTPS Local Only (with 80-->443 redirect)
-            - traefik.http.routers.vscode_local.tls=true
-            - traefik.http.routers.vscode_local.tls.certResolver=le-home
-            - traefik.http.routers.vscode_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.vscode_local.rule=Host(`vscode.home.domain.com`)
-            - traefik.http.routers.vscode_local.service=vscode
 
     watchtower:
         container_name: watchtower
@@ -484,77 +539,6 @@ services:
             - traefik.http.routers.adguard_local.tls.domains[0].main=*.home.domain.com
             - traefik.http.routers.adguard_local.rule=Host(`adguard.home.domain.com`)
             - traefik.http.routers.adguard_local.service=adguard
-
-    tailscale:
-        container_name: tailscale
-        volumes:
-            - '/var/lib:/var/lib'
-            - '/dev/net/tun:/dev/net/tun'
-        environment:
-            - TS_ROUTES=10.0.0.0/24,10.0.1.0/24
-        network_mode: host
-        privileged: true
-        image: tailscale/tailscale
-        entrypoint: tailscaled
-
-    nginx:
-        #image: nginx:latest
-        image: trafex/php-nginx
-        container_name: nginx
-        restart: 'always'
-        volumes:
-            #- /opt/nginx:/usr/share/nginx/html:ro
-            - /opt/nginx:/var/www/html:ro #php version
-        labels:
-            # HTTPS for CF
-            - traefik.enable=true
-            - traefik.http.routers.nginx.entrypoints=websecure
-            - traefik.http.routers.nginx.tls=true
-            - traefik.http.routers.nginx.rule=Host(`heatmap.domain.com`)
-            - traefik.http.services.nginx.loadbalancer.server.port=8080
-            - traefik.http.routers.nginx.service=nginx
-
-    traefik:
-        container_name: traefik
-        image: traefik:v3.0
-        restart: always
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - /opt/traefik/:/etc/traefik/
-            - /opt/traefik/certs:/opt/certs:ro
-        ports:
-            #- 8889:8080 # dashboard
-            - 80:80/tcp
-            - 443:443/udp
-            - 443:443/tcp
-        extra_hosts:
-            - "host.docker.internal:host-gateway"
-        labels:
-            # HTTPS for CF
-            - traefik.enable=true
-            - traefik.http.routers.traefik_https.rule=Host(`traefik.domain.com`)
-            - traefik.http.routers.traefik_https.entrypoints=websecure
-            - traefik.http.routers.traefik_https.tls=true
-            - traefik.http.routers.traefik_https.service=api@internal
-            # HTTPS Local Only (with 80-->443 redirect)
-            - traefik.http.routers.traefik_local.tls=true
-            - traefik.http.routers.traefik_local.tls.certResolver=le-home
-            - traefik.http.routers.traefik_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.traefik_local.rule=Host(`traefik.home.domain.com`)
-            - traefik.http.routers.traefik_local.service=api@internal
-        environment:
-            - CF_DNS_API_TOKEN=SECRET
-
-    cloudflared:
-        container_name: cloudflared
-        image: cloudflare/cloudflared:latest
-        restart: 'always'
-        network_mode: host
-        environment:
-            - TZ=America/Chicago
-        volumes:
-            - /opt/cloudflared/:/home/nonroot/.cloudflared/
-        command: tunnel run nuc
 
     signal-rest-api:
         container_name: signal-rest-api

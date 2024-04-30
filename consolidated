@@ -32,14 +32,7 @@ services:
             - /frigate:/frigate_disk:ro
         devices:
             - /dev/zigbee
-            - /dev/usb_modem_sim7080g:/dev/cellular_modem
-        environment:
-            - TZ=America/Chicago
-        network_mode: host
-        restart: always
-        logging:
-            driver: none
-
+            - /dev/usb_modem_sim7080g:/dev/
     mariadb:
         container_name: mariadb
         image: 'mariadb:latest'
@@ -642,33 +635,6 @@ services:
             - traefik.http.services.sqliteweb.loadbalancer.server.port=8080
             - traefik.http.routers.sqliteweb.service=sqliteweb
 
-    vrs:
-        container_name: vrs
-        restart: 'always'
-        image: mikenye/virtualradarserver
-        # ports:
-        #     - '1234:8080'
-        environment:
-            - USERNAME=aneisch
-            - PASSWORD=PASSWORD
-            - TZ=America/Chicago
-        volumes:
-            - /opt/vrs/config:/config
-        labels:
-            # HTTPS for CF
-            - traefik.enable=true
-            - traefik.http.routers.vrs.entrypoints=websecure
-            - traefik.http.middlewares.vrs-redirect.redirectregex.regex=^https://vrs.domain.com/$$
-            - traefik.http.middlewares.vrs-redirect.redirectregex.replacement=https://vrs.domain.com/VirtualRadar/desktop.html
-            - traefik.http.middlewares.vrs-redirect-admin.redirectregex.regex=^https://vrs.domain.com/admin$$
-            - traefik.http.middlewares.vrs-redirect-admin.redirectregex.replacement=https://vrs.domain.com/VirtualRadar/WebAdmin/DatabaseWriterPluginOptions.html
-            - "traefik.http.middlewares.vrs.chain.middlewares=vrs-redirect@docker,vrs-redirect-admin@docker" # combine the two in a chain
-            - "traefik.http.routers.vrs.middlewares=vrs@docker" # apply the chain
-            - traefik.http.routers.vrs.tls=true
-            - traefik.http.routers.vrs.rule=Host(`vrs.domain.com`)
-            - traefik.http.services.vrs.loadbalancer.server.port=8080
-            - traefik.http.routers.vrs.service=vrs
-
     macos:
         container_name: macos
         restart: 'always'
@@ -755,31 +721,6 @@ services:
             - PLUS_API_KEY=secret
             - TZ=America/Chicago
 
-    codeproject:
-        container_name: codeproject
-        restart: 'always'
-        image: codeproject/ai-server
-        ports:
-            - 32168:32168
-        volumes:
-            - /opt/codeproject/config:/etc/codeproject/ai
-            #- /opt/codeproject/modules:/app/preinstalled-modules/ObjectDetectionYolo/custom-models/
-            - /opt/codeproject/NETmodules:/app/preinstalled-modules/ObjectDetectionYOLOv5Net/custom-models/
-            - /opt/codeproject/modules:/app/preinstalled-modules/ObjectDetectionYOLOv5-6.2/custom-models/
-        labels:
-            - traefik.enable=true
-            - traefik.http.services.codeproject.loadbalancer.server.port=32168
-            # HTTPS Local Only (with 80-->443 redirect)
-            - traefik.http.routers.codeproject_local.tls=true
-            - traefik.http.routers.codeproject_local.tls.certResolver=le-home
-            - traefik.http.routers.codeproject_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.codeproject_local.rule=Host(`codeproject.home.domain.com`)
-            - traefik.http.routers.codeproject_local.service=codeproject
-            - traefik.http.routers.codeproject_local.middlewares=codeproject_local_redirect
-            - traefik.http.middlewares.codeproject_local_redirect.redirectregex.regex=^https://codeproject.home.domain.com/(.*)
-            - traefik.http.middlewares.codeproject_local_redirect.redirectregex.replacement=http://10.0.1.22:32168/$${1}
-            - traefik.http.middlewares.codeproject_local_redirect.redirectregex.permanent=true
-
     auto-southwest:
         image: jdholtz/auto-southwest-check-in:develop
         container_name: auto-southwest
@@ -828,38 +769,7 @@ services:
             # - traefik.http.routers.recipes_local.rule=Host(`recipes.home.domain.com`)
             # - traefik.http.routers.recipes_local.service=recipes
 
-    librespeed:
-        image: linuxserver/librespeed
-        container_name: librespeed
-        environment:
-            - TZ=America/Chicago
-        restart: 'no'
-        labels:
-            - sablier.enable=true
-            - sablier.group=default
-            # Route via Sablier: See dynamic.yaml in Traefik
-            # - traefik.enable=true
-            # - traefik.http.services.librespeed.loadbalancer.server.port=80
-            # - traefik.http.routers.librespeed.entrypoints=websecure
-            # - traefik.http.routers.librespeed.tls=true
-            # - traefik.http.routers.librespeed.rule=Host(`librespeed.domain.com`)
-            # - traefik.http.routers.librespeed.service=librespeed
-            # # HTTPS Local Only (with 80-->443 redirect)
-            # - traefik.http.routers.librespeed_local.service=librespeed
-            # - traefik.http.routers.librespeed_local.tls=true
-            # - traefik.http.routers.librespeed_local.tls.certResolver=le-home
-            # - traefik.http.routers.librespeed_local.tls.domains[0].main=*.home.domain.com
-            # - traefik.http.routers.librespeed_local.rule=Host(`librespeed.home.domain.com`)
-
-    sablier:
-        image: acouvreur/sablier:1.6.0
-        container_name: sablier
-        restart: 'always'
-        command:
-            - start
-            - --provider.name=docker
-        volumes:
-            - '/var/run/docker.sock:/var/run/docker.sock'
+    
 
 networks:
     macos_network:

@@ -167,10 +167,10 @@ services:
 
     traefik:
         container_name: traefik
-        image: traefik:v3.0
+        image: traefik:latest
         restart: always
         volumes:
-            - /home/richard/Docker/traefik/var/run/docker.sock:/var/run/docker.sock
+            - /var/run/docker.sock/var/run/docker.sock
             - /home/richard/Docker/traefik/:/etc/traefik/
             - /home/richard/Docker/traefik/certs:/opt/certs:ro
         ports:

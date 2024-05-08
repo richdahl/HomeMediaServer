@@ -16,8 +16,8 @@ services:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.assist_local.tls=true
             - traefik.http.routers.assist_local.tls.certResolver=le-home
-            - traefik.http.routers.assist_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.assist_local.rule=Host(`assist.home.domain.com`)
+            - traefik.http.routers.assist_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.assist_local.rule=Host(`assist.dahlstromonline.com`)
             - traefik.http.routers.assist_local.service=assist
         volumes:
             - /opt/homeassistant:/config
@@ -106,8 +106,8 @@ services:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.nodered_local.tls=true
             - traefik.http.routers.nodered_local.tls.certResolver=le-home
-            - traefik.http.routers.nodered_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.nodered_local.rule=Host(`nodered.home.domain.com`)
+            - traefik.http.routers.nodered_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.nodered_local.rule=Host(`nodered.dahlstromonline.com`)
             - traefik.http.routers.nodered_local.service=nodered
 
     grafana:
@@ -161,8 +161,8 @@ services:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.vscode_local.tls=true
             - traefik.http.routers.vscode_local.tls.certResolver=le-home
-            - traefik.http.routers.vscode_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.vscode_local.rule=Host(`vscode.home.domain.com`)
+            - traefik.http.routers.vscode_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.vscode_local.rule=Host(`vscode.dahlstromonline.com`)
             - traefik.http.routers.vscode_local.service=vscode
 
     traefik:
@@ -190,8 +190,8 @@ services:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.traefik_local.tls=true
             - traefik.http.routers.traefik_local.tls.certResolver=le-home
-            - traefik.http.routers.traefik_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.traefik_local.rule=Host(`traefik.home.domain.com`)
+            - traefik.http.routers.traefik_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.traefik_local.rule=Host(`traefik.dahlstromonline.com`)
             - traefik.http.routers.traefik_local.service=api@internal
         environment:
             - CF_DNS_API_TOKEN=SECRET
@@ -267,8 +267,8 @@ tailscale:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.appdaemon_local.tls=true
             - traefik.http.routers.appdaemon_local.tls.certResolver=le-home
-            - traefik.http.routers.appdaemon_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.appdaemon_local.rule=Host(`appdaemon.home.domain.com`)
+            - traefik.http.routers.appdaemon_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.appdaemon_local.rule=Host(`appdaemon.dahlstromonline.com`)
             - traefik.http.routers.appdaemon_local.service=appdaemon
 
     thermostat_api_server:
@@ -313,8 +313,8 @@ tailscale:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.zwavejs_local.tls=true
             - traefik.http.routers.zwavejs_local.tls.certResolver=le-home
-            - traefik.http.routers.zwavejs_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.zwavejs_local.rule=Host(`zwavejs.home.domain.com`)
+            - traefik.http.routers.zwavejs_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.zwavejs_local.rule=Host(`zwavejs.dahlstromonline.com`)
             - traefik.http.routers.zwavejs_local.service=zwavejs
 
     plex:
@@ -342,8 +342,8 @@ tailscale:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.plex_local.tls=true
             - traefik.http.routers.plex_local.tls.certResolver=le-home
-            - traefik.http.routers.plex_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.plex_local.rule=Host(`plex.home.domain.com`)
+            - traefik.http.routers.plex_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.plex_local.rule=Host(`plex.dahlstromonline.com`)
             - traefik.http.routers.plex_local.service=plex
 
     portainer:
@@ -373,8 +373,8 @@ tailscale:
             # # HTTPS Local Only (with 80-->443 redirect)
             # - traefik.http.routers.portainer_local.tls=true
             # - traefik.http.routers.portainer_local.tls.certResolver=le-home
-            # - traefik.http.routers.portainer_local.tls.domains[0].main=*.home.domain.com
-            # - traefik.http.routers.portainer_local.rule=Host(`portainer.home.domain.com`)
+            # - traefik.http.routers.portainer_local.tls.domains[0].main=*.dahlstromonline.com
+            # - traefik.http.routers.portainer_local.rule=Host(`portainer.dahlstromonline.com`)
             # - traefik.http.routers.portainer_local.service=portainer
 
     esphome:
@@ -396,14 +396,14 @@ tailscale:
             - traefik.enable=true
             - traefik.http.routers.esphome.entrypoints=websecure
             - traefik.http.routers.esphome.tls=true
-            - traefik.http.routers.esphome.rule=Host(`esphome.domain.com`)
+            - traefik.http.routers.esphome.rule=Host(`espdahlstromonline.com`)
             - traefik.http.services.esphome.loadbalancer.server.port=6052
             - traefik.http.routers.esphome.service=esphome
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.esphome_local.tls=true
             - traefik.http.routers.esphome_local.tls.certResolver=le-home
-            - traefik.http.routers.esphome_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.esphome_local.rule=Host(`esphome.home.domain.com`)
+            - traefik.http.routers.esphome_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.esphome_local.rule=Host(`esphome.dahlstromonline.com`)
             - traefik.http.routers.esphome_local.service=esphome
 
     433_mqtt:
@@ -536,8 +536,8 @@ tailscale:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.adguard_local.tls=true
             - traefik.http.routers.adguard_local.tls.certResolver=le-home
-            - traefik.http.routers.adguard_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.adguard_local.rule=Host(`adguard.home.domain.com`)
+            - traefik.http.routers.adguard_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.adguard_local.rule=Host(`adguard.dahlstromonline.com`)
             - traefik.http.routers.adguard_local.service=adguard
 
     signal-rest-api:
@@ -560,8 +560,8 @@ tailscale:
             - traefik.http.routers.signal_local.service=signal_local
             - traefik.http.routers.signal_local.tls=true
             - traefik.http.routers.signal_local.tls.certResolver=le-home
-            - traefik.http.routers.signal_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.signal_local.rule=Host(`signal.home.domain.com`)
+            - traefik.http.routers.signal_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.signal_local.rule=Host(`signal.dahlstromonline.com`)
 
     apcupsd:
         container_name: apcupsd
@@ -690,16 +690,16 @@ tailscale:
             # HTTPS Local Only (with 80-->443 redirect)
             - traefik.http.routers.frigate_local.tls=true
             - traefik.http.routers.frigate_local.tls.certResolver=le-home
-            - traefik.http.routers.frigate_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.frigate_local.rule=Host(`frigate.home.domain.com`)
+            - traefik.http.routers.frigate_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.frigate_local.rule=Host(`frigate.dahlstromonline.com`)
             - traefik.http.routers.frigate_local.service=frigate
             # Go2rtc Local
             - traefik.http.services.go2rtc.loadbalancer.server.port=1984
             - traefik.http.routers.go2rtc_local.service=go2rtc
             - traefik.http.routers.go2rtc_local.tls=true
             - traefik.http.routers.go2rtc_local.tls.certResolver=le-home
-            - traefik.http.routers.go2rtc_local.tls.domains[0].main=*.home.domain.com
-            - traefik.http.routers.go2rtc_local.rule=Host(`go2rtc.home.domain.com`)
+            - traefik.http.routers.go2rtc_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.go2rtc_local.rule=Host(`go2rtc.dahlstromonline.com`)
 
         environment:
             - PLUS_API_KEY=secret
@@ -749,8 +749,8 @@ tailscale:
             # # HTTPS Local Only (with 80-->443 redirect)
             # - traefik.http.routers.recipes_local.tls=true
             # - traefik.http.routers.recipes_local.tls.certResolver=le-home
-            # - traefik.http.routers.recipes_local.tls.domains[0].main=*.home.domain.com
-            # - traefik.http.routers.recipes_local.rule=Host(`recipes.home.domain.com`)
+            # - traefik.http.routers.recipes_local.tls.domains[0].main=*.dahlstromonline.com
+            # - traefik.http.routers.recipes_local.rule=Host(`recipes.dahlstromonline.com`)
             # - traefik.http.routers.recipes_local.service=recipes
 
     

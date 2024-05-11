@@ -1,0 +1,48 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+      - 127.0.0.1:8080:8080 # traefik api dashboard
+
+    environment:
+      - CF_API_EMAIL=aahboom@gmail.com
+      - CF_DNS_API_TOKEN=f8455a732caff59b4c67b7e8d301e3551339c
+      # - CF_API_KEY=YOU_API_KEY
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/richard/Docker/traefik/config/traefik.yml:/traefik.yml:ro
+      - /home/richard/Docker/traefik/certs/acme.json:/acme.json
+      - /home/richard/Docker/traefik/config/config.yml:/config.yml
+      #- /home/richard/Docker/traefik/config/dynamic.yml:/dynamic.yml:ro
+      - /home/richard/Docker/traefik/logs:/var/log/traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.dahlstromonline.com`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$TCAjALsB$$Vnday11ey3vWLJ74ZGZxU."
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.dahlstromonline.com`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=dahlstromonline.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.dahlstromonline.com"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+
+networks:
+  proxy:
+    name: proxy
+    external: true

@@ -6,7 +6,6 @@
 # The compose file on main may not be compatible with the latest release.
 #
 
-name: immich
 
 services:
   immich-server:
@@ -24,6 +23,20 @@ services:
       - redis
       - database
     restart: always
+    labels:
+    # HTTPS for CF
+    - traefik.enable=true
+    - traefik.http.routers.immich-server.entrypoints=websecure
+    - traefik.http.routers.immich-server.tls=true
+    - traefik.http.routers.immich-server.rule=Host(`photos.domain.com`)
+    - traefik.http.services.immich-server.loadbalancer.server.port=3001
+    - traefik.http.routers.immich-server.service=immich-server
+    # HTTPS Local Only (with 80-->443 redirect)
+    - traefik.http.routers.immich-server_local.tls=true
+    - traefik.http.routers.immich-server_local.tls.certResolver=cloudflare
+    - traefik.http.routers.immich-server_local.tls.domains[0].main=*.dahlstromonline.com
+    - traefik.http.routers.immich-server_local.rule=Host(`photos.dahlstromonline.com`)
+    - traefik.http.routers.immich-server_local.service=immich-server
 
   immich-microservices:
     container_name: immich_microservices
@@ -71,6 +84,7 @@ services:
     volumes:
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     restart: always
+
 
 volumes:
   model-cache:

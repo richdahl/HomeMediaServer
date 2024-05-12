@@ -1,0 +1,82 @@
+services:
+
+ overseerr:
+    image: sctx/overseerr:latest
+    container_name: overseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/New_York
+      - PORT=5055 #optional
+    networks:
+      - tor-stack
+      - proxy
+    ports:
+      - 5055:5055
+    volumes:
+      - /home/richard/Docker/Overseerr/data:/app/config
+      - /media/richard/Storage/media/files:/files
+      - /media/richard/Storage/media/data:/data
+    restart: unless-stopped
+
+
+ plex:
+    container_name: plex
+    image: lscr.io/linuxserver/plex:latest
+    restart: unless-stopped
+    ports:
+      - 32400:32400
+    networks:
+      - proxy
+      - tor-stack
+    environment:
+      - TZ=America/New_York
+      - PLEX_CLAIM=claim-mbe48XqyXAWH9EizRLVX
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /home/richard/Docker/Plex/data:/config
+      - /home/richard/Docker/Plex/transcode:/transcode
+      - /media/richard/Storage/media/tv:/tv
+      - /media/richard/Storage/media/movies:/movies
+    labels:
+       # HTTP Local Only
+      - traefik.enable=true
+      - traefik.http.services.plex.loadbalancer.server.port=32400
+      # HTTPS Local Only (with 80-->443 redirect)
+      - traefik.http.routers.plex_local.tls=true
+      - traefik.http.routers.plex_local.tls.certResolver=cloudflare
+      - traefik.http.routers.plex_local.tls.domains[0].main=*.dahlstromonline.com
+      - traefik.http.routers.plex_local.rule=Host(`plex.dahlstromonline.com`)
+      - traefik.http.routers.plex_local.service=plex
+
+ homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - 3000:3000
+    networks:
+      - proxy
+      - tor-stack
+    volumes:
+      - /home/richard/Docker/Homepage/data:/app/config # Make sure your local config directory exists
+      - /var/run/docker.sock:/var/run/docker.sock:ro # optional, for docker integrations
+    restart: unless-stopped
+    labels:
+       # HTTP Local Only
+      - traefik.enable=true
+      - traefik.http.services.homepage.loadbalancer.server.port=3000
+      # HTTPS Local Only (with 80-->443 redirect)
+      - traefik.http.routers.homepage_local.tls=true
+      - traefik.http.routers.homepage_local.tls.certResolver=cloudflare
+      - traefik.http.routers.homepage_local.tls.domains[0].main=dahlstromonline.com
+      - traefik.http.routers.homepage_local.rule=Host(`dahlstromonline.com`)
+      - traefik.http.routers.homepage_local.service=homepage
+
+networks:
+    tor-stack:
+      name: tor-stack
+      external: true
+
+    proxy:
+      name: proxy
+      external: true

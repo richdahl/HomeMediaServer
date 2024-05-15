@@ -1,0 +1,144 @@
+services:
+    
+    homeassistant:
+        container_name: homeassistant
+        image: ghcr.io/home-assistant/home-assistant:latest
+        ports:
+            - 8123:8123
+        networks:
+            - databases
+            - HomeAssistant
+        environment:
+            - PUID=1000
+            - PGID=138            
+        labels:
+            - com.centurylinklabs.watchtower.monitor-only=true
+            # HTTPS for CF
+            - traefik.enable=true
+            - traefik.http.routers.assist.entrypoints=websecure
+            - traefik.http.routers.assist.tls=true
+            - traefik.http.routers.assist.rule=Host(`ha.dahlstromonline.com`)
+            - traefik.http.services.assist.loadbalancer.server.port=8123
+            - traefik.http.routers.assist.service=assist
+            # HTTPS Local Only (with 80-->443 redirect)
+            - traefik.http.routers.assist_local.tls=true
+            - traefik.http.routers.assist_local.tls.certResolver=cloudflare
+            - traefik.http.routers.assist_local.tls.domains[0].main=*.dahlstromonline.com
+            - traefik.http.routers.assist_local.rule=Host(`ha.dahlstromonline.com`)
+            - traefik.http.routers.assist_local.service=assist
+        volumes:
+            - /home/richard/Docker/HomeAssistant/data:/config
+            #- /opt/nginx-proxy-manager/database.sqlite:/tmp/database.sqlite
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            #- /home/aneisch/symlinks_for_rsync/hass-docker-ssh:/root/.ssh:ro
+            #- /tmp/radar.gif:/tmp/radar.gif
+            #- /sys/class/hwmon/hwmon1/temp1_input:/sys/class/thermal/thermal_zone0/temp:ro
+            - /etc/localtime:/etc/localtime:ro
+            #- /frigate-drive:/frigate
+            #- /opt/frigate:/etc/frigate:ro
+            #- /frigate:/frigate_disk:ro
+        #devices:
+         #   - /dev/zigbee
+          #  - /dev/usb_modem_sim7080g:/dev/
+
+    homebridge:
+        image: homebridge/homebridge:latest
+        container_name: homebridge
+        restart: unless-stopped
+        networks:
+            - HomeAssistant
+        environment:
+            - PUID=1000
+            - PGID=138
+        ports:
+            - 8581:8581
+            - 51028:51028
+            - "52100-52200:52100-52200"
+        volumes:
+            - /home/richard/Docker/homebridge:/homebridge
+        logging:
+          driver: json-file
+          options:
+            max-size: "10mb"
+            max-file: "1"
+          
+    mariadb:
+        container_name: mariadb
+        image: 'mariadb:latest'
+        user: '1000'
+        networks:
+            - databases
+        ports:
+            - '3306:3306' # Expose localhost only for Home Assistant
+        volumes:
+            - /home/richard/Docker/mariadb:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=PASSWORD
+            - MYSQL_USER=homeassistant
+            - MYSQL_PASSWORD=homeassistant
+            - MYSQL_DATABASE=homeassistant
+            - TZ=America/Chicago
+        restart: always
+
+    influxdb:
+        container_name: influxdb
+        #image: influxdb
+        image: influxdb:latest
+        user: '1000'
+        volumes:
+            - '/home/richard/Docker/InfluxDB:/var/lib/influxdb'
+            - '/home/richard/Docker/InfluxDB/data/config:/etc/influxdb'
+        networks:
+            - databases
+        ports:
+            - '8086:8086' # Expose localhost only for Home Assistant
+        restart: always
+        environment:
+            - TZ=America/New_York
+            
+    mosquitto:
+        container_name: mosquitto
+        image: eclipse-mosquitto:latest
+        user: '1000'
+        environment:
+            - TZ=America/New_York
+        healthcheck:
+            test: "mosquitto_sub -E -t '#'"
+            interval: 60s
+            timeout: 10s
+            retries: 5
+        volumes:
+            - /home/richard/Docker/Mosquitto/data/config:/config
+            - /home/richard/Docker/Mosquitto/data/log:/log
+            - /home/richard/Docker/Mosquitto/data:/data
+        networks:
+            - HomeAssistant
+        ports:
+            - '1883:1883'
+            - '8883:8883'
+        restart: always
+
+    nodered:
+        container_name: nodered
+        image: nodered/node-red:latest
+        user: '1000'
+        networks:
+            - HomeAssistant
+        volumes:
+            - /home/richard/Docker/NodeRed/data:/config
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - TZ=America/New_Yprk
+        ports:
+            - 1880:1880
+            - '25:25'
+        restart: always
+
+networks:
+    databases:
+        name: databases
+        external: true
+
+    HomeAssistant:
+        name: HomeAssistant
+        external: true
